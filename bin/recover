@@ -1,0 +1,24 @@
+#!/usr/bin/env node
+'use strict';
+
+const recover = require('../src/recover'),
+  argv = process.argv;
+
+
+switch(argv[2]) {
+    case 'to':
+        recover.to(argv[3]);
+        break;
+    case 'push':
+        recover.push(argv[3]);
+        break;
+    case 'pop':
+        recover.pop();
+        break;
+    case 'reset':
+        recover.reset();
+        break;
+    default:
+        recover.to(argv[2]);
+        break;
+}
