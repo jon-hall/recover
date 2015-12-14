@@ -1,9 +1,14 @@
 #!/usr/bin/env node
 'use strict';
 
-const recover = require('../src/recover'),
-  argv = process.argv;
-
+// TODO: --gitdir arg support
+const argv = require('commander')
+    .version('0.0.0')
+    .usage('recover <to|push|pop|reset>')
+    .option('-t, --target [path]', 'Specify the folder to use recover on')
+    .option('-g, --gitdir [path]', 'Specify the relative path for the git directory recover will use')
+    .parse(process.argv),
+    recover = require('../src/recover')(argv);
 
 switch(argv[2]) {
     case 'to':
