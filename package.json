@@ -25,10 +25,18 @@
     "url": "https://github.com/jon-hall/recover/issues"
   },
   "engines": {
-      "node": ">=4.0.0",
-      "npm": ">=3.0.0"
+    "node": ">=4.0.0",
+    "npm": ">=3.0.0"
   },
   "homepage": "https://github.com/jon-hall/recover#readme",
   "devDependencies": {
+    "jasmine-es6-promise-matchers": "^2.0.1",
+    "temp": "^0.8.3"
+  },
+  "dependencies": {
+    "co": "^4.6.0",
+    "commander": "^2.9.0",
+    "ospath": "^1.1.0",
+    "promisify-node": "^0.3.0"
   }
 }
