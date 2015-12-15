@@ -101,8 +101,33 @@ describe('recover', function() {
             });
 
             describe('and pop is subsequently called', function() {
-                it('it restores the folder to its previous state', function() {
+                it('it errors, since you can\'t pop the first push', function(done) {
+                    // First push inits the repo
+                    this.rec.push('a')
+                        .then(() => {
+                        expect(this.files.read('a.txt')).toBeResolved(() => {
+                            expect(this.rec.pop()).toBeRejected(done);
+                        });
+                    });
+                });
+            });
 
+            describe('and push is called again', function() {
+                describe('and pop is subsequently called', function() {
+                    it('it restores the folder to its initial state', function(done) {
+                        // First push inits the repo
+                        this.rec.push('a')
+                            .then(() => this.files.write('b.txt', 'more stuff'))
+                            // Second push is the first 'poppable' push
+                            .then(() => this.rec.push('b'))
+                            .then(() => {
+                            expect(this.files.read('b.txt')).toBeResolved(() => {
+                                this.rec.pop().then(() => {
+                                    expect(this.files.read('b.txt')).toBeRejected(done);
+                                }, console.log.bind(console));
+                            });
+                        });
+                    });
                 });
             });
         });

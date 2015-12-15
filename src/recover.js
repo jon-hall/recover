@@ -18,7 +18,7 @@ function Recoverer(cfg) {
 
     // TODO: [sync] git init if target not git dir
 
-    // TODO: Read all existing commits in to get list of labels
+    // TODO: Read all existing tags in to get list of labels
     this.labels = [];
 
     this.git = new Git({
@@ -48,6 +48,8 @@ Recoverer.prototype.push = co.wrap(function*(label) {
 
     let status;
     try {
+        // Stage all changes (additions, deletions, and updates)
+        yield this.git.exec('add -A');
         status = yield this.git.exec('status --porcelain');
     } catch(ex) {
         // Not a git repo, so exec git init (setting work-tree as cwd)
@@ -69,16 +71,18 @@ Recoverer.prototype.push = co.wrap(function*(label) {
         label = '' + n++;
     }
 
-    // TODO: git commit
+    // Commit and tag with the label, so we can easily come back to it later
+    yield this.git.exec('commit -m "recover"');
+    yield this.git.exec(`tag "${label}"`);
 
     this.labels.push(label);
 
     return label;
 });
 
-Recoverer.prototype.pop = function() {
-    console.log('pop');
-};
+Recoverer.prototype.pop = co.wrap(function*(label) {
+    yield this.git.exec('reset --hard HEAD~1');
+});
 
 Recoverer.prototype.reset = function() {
     console.log('reset');
