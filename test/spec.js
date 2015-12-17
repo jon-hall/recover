@@ -128,6 +128,22 @@ describe('recover', function() {
                             });
                         });
                     });
+
+                    it('even if there are unpushed files', function(done) {
+                        // First push inits the repo
+                        this.rec.push('a')
+                            .then(() => this.files.write('b.txt', 'more stuff'))
+                            // Second push is the first 'poppable' push
+                            .then(() => this.rec.push('b'))
+                            .then(() => this.files.write('c.txt', 'even more stuff'))
+                            .then(() => {
+                            expect(this.files.read('c.txt')).toBeResolved(() => {
+                                this.rec.pop().then(() => {
+                                    expect(this.files.read('c.txt')).toBeRejected(done);
+                                }, done.fail);
+                            });
+                        });
+                    });
                 });
             });
         });
@@ -135,44 +151,74 @@ describe('recover', function() {
 
     describe('when to is called', function() {
         describe('and no value is passed in', function() {
-            it('it errors', function() {
-
+            it('it errors', function(done) {
+                expect(this.rec.to()).toBeRejectedWith('Label is required and must be a string', done);
             });
         });
 
         describe('and a value which isn\'t a string is passed in', function() {
-            it('it errors', function() {
-
+            it('it errors', function(done) {
+                expect(this.rec.to(new Date())).toBeRejectedWith('Label is required and must be a string', done);
             });
         });
 
         describe('and a string is passed in', function() {
             describe('and the string is not a valid recover label', function() {
-                it('it errors', function() {
-
+                it('it errors', function(done) {
+                    expect(this.rec.to('notavalidlabel')).toBeRejectedWith('Unrecognised label', done);
                 });
             });
 
             describe('and the string is a valid recover label', function() {
-                it('it restores the folder to its previous state', function() {
-
+                beforeEach(function(done) {
+                    this.files.write('a.txt', 'some text')
+                        .then(() => this.rec.push('a'))
+                        .then(() => this.files.write('b.txt', 'more stuff'))
+                        // Second push is the first 'poppable' push
+                        .then(() => this.rec.push('b'))
+                        .then(() => this.files.write('c.txt', 'even more stuff'))
+                        .then(() => this.rec.push('c'))
+                        .then(done, done);
                 });
 
-                describe('amd content is then changed', function() {
-                    describe('and push is called', function() {
-                        it('it does not restore the folder to its previous state', function() {
+                it('it restores the folder to its previous state', function() {
+                    expect(this.files.read('c.txt')).toBeResolved(() => {
+                        this.rec.to('b')
+                            .then(() => {
+                                expect(this.files.read('c.txt')).toBeRejected(done);
+                            }, console.log.bind(console));
+                    });
+                });
 
+                describe('and content is then changed', function() {
+                    beforeEach(function(done) {
+                        this.rec.to('b')
+                            .then(() => this.files.write('d.txt', 'some more stuff'))
+                            .then(done, done);
+                    });
+
+                    describe('and push is called', function() {
+                        beforeEach(function(done) {
+                            this.rec.push('d').then(done, done);
+                        });
+
+                        it('it does not restore the folder to its previous state', function(done) {
+                            expect(this.files.read('d.txt')).toBeResolved(done);
                         });
 
                         describe('and pop is called', function() {
-                            it('it restores the folder to its previous state', function() {
+                            beforeEach(function(done) {
+                                this.rec.pop().then(done, done);
+                            });
 
+                            it('it restores the folder to its previous state', function(done) {
+                                expect(this.files.read('d.txt')).toBeRejected(done);
                             });
                         });
 
                         describe('and then we try to go to a recover point which has been destroyed', function() {
                             it('it errors', function() {
-
+                                expect(this.rec.to('c')).toBeRejectedWith('Unrecognised label');
                             });
                         });
                     });
