@@ -5,8 +5,8 @@
   "main": "src/recover.js",
   "bin": "bin/recover",
   "scripts": {
-    "test": "SET JASMINE_CONFIG_PATH=./test/jasmine.json&& node ./node_modules/jasmine/bin/jasmine.js",
-    "dev": "SET JASMINE_CONFIG_PATH=./test/jasmine.json&& node ./node_modules/nodemon/bin/nodemon.js --exec \"node node_modules/jasmine/bin/jasmine.js\""
+    "test": "SET JASMINE_CONFIG_PATH=./test/jasmine.json&& jasmine",
+    "dev": "SET JASMINE_CONFIG_PATH=./test/jasmine.json&& nodemon --exec jasmine"
   },
   "repository": {
     "type": "git",
@@ -30,7 +30,9 @@
   },
   "homepage": "https://github.com/jon-hall/recover#readme",
   "devDependencies": {
+    "jasmine": "^2.4.1",
     "jasmine-es6-promise-matchers": "^2.0.1",
+    "nodemon": "^1.8.1",
     "temp": "^0.8.3"
   },
   "dependencies": {
