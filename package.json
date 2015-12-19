@@ -38,6 +38,8 @@
   "dependencies": {
     "co": "^4.6.0",
     "commander": "^2.9.0",
+    "del": "^2.2.0",
+    "fs-extra": "^0.26.3",
     "ospath": "^1.1.0",
     "promisify-node": "^0.3.0"
   }

@@ -2,8 +2,10 @@
 
 const path = require('path'),
     crypto = require('crypto'),
+    fsx = require('fs-extra'),
     co = require('co'),
     ospath = require('ospath'),
+    del = require('del'),
     Git = require('./git');
 
 let n = 0;
@@ -14,10 +16,15 @@ function Recoverer(cfg) {
         gitdir: path.join(ospath.data(), `recover/${get_folder_name(cfg.target || process.cwd())}/.git`)
     }, cfg);
 
-    // TODO: Error if no target (test!)
+    // Error if target dir doesn't exist
+    try {
+        fsx.lstatSync(this.cfg.target);
+    } catch(ex) {
+        throw new Error('Gitdir specified already exists.');
+    }
 
-    // TODO: [sync] git init if target not git dir
-
+    // Make sure the gitdir does exist
+    fsx.ensureDirSync(this.cfg.gitdir);
 
     // Hold any 'undone' labels here when back-tracking (until changes pushed)
     this.future = [];
@@ -27,14 +34,12 @@ function Recoverer(cfg) {
         gitdir: this.cfg.gitdir
     });
 
-    // TODO: Loading tags breaks everything - why?
     // Read all existing tags in to get list of labels
     this.labels = [];
     this.get_tags = this.git.exec('tag').then(tags => {
         this.labels = tags.split('\n');
-        console.log(this.labels.pop());
     },
-    // Make sure we default to empty array if git tag fails
+    // Make sure we default to empty array if 'git tag' fails
     _ => Promise.resolve([]));
 }
 
@@ -104,7 +109,7 @@ Recoverer.prototype.push = co.wrap(function*(label) {
 
         // The current tag/label is always the last item in 'this.labels'
         yield this.git.exec(`reset --hard "tags/${this.labels[this.labels.length-1]}"`);
-        yield this.reset();
+        yield this.reset(true);
 
         // Merge temp back in and delete it
         yield this.git.exec('merge temp');
@@ -120,7 +125,6 @@ Recoverer.prototype.push = co.wrap(function*(label) {
 });
 
 Recoverer.prototype.pop = co.wrap(function*(label) {
-    // TODO: Test this is ok when labels.length === 0
     if(this.labels.length) {
         if(!(yield* this._on_master())) {
             // If we're off master we have to checkout master at the
@@ -137,18 +141,32 @@ Recoverer.prototype.pop = co.wrap(function*(label) {
             this.future = [];
         }
 
+        // Check if we're popping the first commit
+        let log_result = yield this.git.exec('log -n 2 --oneline --format="%H"');
+        if(log_result.split(/\s/).length === 2) {
+            // We can't remove the init commit, so instead we delete the gitdir
+            yield del(this.cfg.gitdir, { force: true });
+            return this.labels.pop();
+        }
+
         yield this.git.exec('reset --hard HEAD~1');
-        yield this.reset();
-        this.labels.pop();
+        yield this.reset(true);
+        return this.labels.pop();
     }
 });
 
-Recoverer.prototype.reset = co.wrap(function*() {
+Recoverer.prototype.reset = co.wrap(function*(_force) {
     try {
         yield this.get_tags;
+
+        // Only do a reset if we're not 'off-master', (e.g. in a 'to')
+        if(_force || (yield* this._on_master())) {
+            yield this.git.exec('reset --hard');
+        }
+
         // Clean working copy of ALL modifications
-        yield this.git.exec('reset --hard');
         yield this.git.exec('clean -d -x -f');
+        yield this.git.exec('checkout .');
     } catch(ex) {
         // TODO: Real error handling...
     }
@@ -168,8 +186,22 @@ Recoverer.prototype.to = co.wrap(function*(label) {
         // Clean our working copy
         yield this.reset();
 
+        // Bail here if 'to' is called for the current version
+        if(past_index === (this.labels.length - 1)) {
+            return;
+        }
+
         // Checkout the tag we're moving to
         try {
+            // If we're off master we need to delete temp so we can re-create
+            if(!(yield* this._on_master())) {
+                // Switch back ot master momentarily
+                yield this.git.exec('checkout master');
+
+                // Delete temp
+                yield this.git.exec('branch -D temp');
+            }
+
             yield this.git.exec(`checkout "tags/${label}" -b temp`);
         } catch(ex) {
             // TODO: Why does this have a non-zero exit code when it suceeds?
@@ -181,7 +213,7 @@ Recoverer.prototype.to = co.wrap(function*(label) {
         this.future = this.labels.splice(past_index + 1).concat(this.future);
     } else if (future_index >= 0) {
         // Move any items now in the past out of 'this.future', back into labels
-        this.labels = this.labels.concat(this.future.splice(future_index - 1, future_index));
+        this.labels = this.labels.concat(this.future.splice(future_index, future_index + 1));
     } else {
         throw 'Unrecognised label';
     }

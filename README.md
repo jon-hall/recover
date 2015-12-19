@@ -67,7 +67,7 @@ recoverer.push('init')
 ```
 
 ### API
-All of the methods (other than the constructor) return Promises, which resolve with the result once the operation is complete.
+All of the methods (other than the constructor) return Promises, which resolve once the operation is complete.
 
 - [recover](#recoveroptions)
 - [Recover](#new-Recoveroptions)
