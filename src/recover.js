@@ -29,10 +29,13 @@ function Recoverer(cfg) {
 
     // TODO: Loading tags breaks everything - why?
     // Read all existing tags in to get list of labels
+    this.labels = [];
     this.get_tags = this.git.exec('tag').then(tags => {
         this.labels = tags.split('\n');
         console.log(this.labels.pop());
-    });
+    },
+    // Make sure we default to empty array if git tag fails
+    _ => Promise.resolve([]));
 }
 
 function get_folder_name(folder) {
@@ -75,6 +78,7 @@ Recoverer.prototype.push = co.wrap(function*(label) {
         return null;
     }
 
+
     // Use a counter to generate a unique commit label
     while(!label || (this.labels.indexOf(label) >= 0)) {
         label = '' + n++;
@@ -91,8 +95,12 @@ Recoverer.prototype.push = co.wrap(function*(label) {
         // We want to get this commit back onto master, first we need
         // to dump all commits after our current HEAD from master though
 
-        // Go back onto master, then reset it to current tag
-        yield this.git.exec(`checkout master`);
+        try {
+            // Go back onto master, then reset it to current tag
+            yield this.git.exec(`checkout master`);
+        } catch(ex) {
+            // TODO: Why does this return non-zero when it suceeds...
+        }
 
         // The current tag/label is always the last item in 'this.labels'
         yield this.git.exec(`reset --hard "tags/${this.labels[this.labels.length-1]}"`);
@@ -161,12 +169,16 @@ Recoverer.prototype.to = co.wrap(function*(label) {
         yield this.reset();
 
         // Checkout the tag we're moving to
-        yield this.git.exec(`checkout "tags/${label}" -b temp`);
+        try {
+            yield this.git.exec(`checkout "tags/${label}" -b temp`);
+        } catch(ex) {
+            // TODO: Why does this have a non-zero exit code when it suceeds?
+        }
     }
 
     if(past_index >= 0) {
         // Make sure we move all commits we're bypassing onto 'future'
-        this.future = this.labels.splice(labelIndex + 1).concat(this.future);
+        this.future = this.labels.splice(past_index + 1).concat(this.future);
     } else if (future_index >= 0) {
         // Move any items now in the past out of 'this.future', back into labels
         this.labels = this.labels.concat(this.future.splice(future_index - 1, future_index));

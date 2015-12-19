@@ -181,12 +181,12 @@ describe('recover', function() {
                         .then(done, done);
                 });
 
-                it('it restores the folder to its previous state', function() {
+                it('it restores the folder to its previous state', function(done) {
                     expect(this.files.read('c.txt')).toBeResolved(() => {
                         this.rec.to('b')
                             .then(() => {
                                 expect(this.files.read('c.txt')).toBeRejected(done);
-                            }, console.log.bind(console));
+                            }, done.fail);
                     });
                 });
 
