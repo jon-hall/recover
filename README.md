@@ -70,7 +70,7 @@ recoverer.push('init')
 All of the methods (other than the constructor) return Promises, which resolve once the operation is complete.
 
 - [recover](#recoveroptions)
-- [Recover](#new-Recoveroptions)
+- [Recover](#new-recoveroptions)
     - [Recover.prototype.push](#recoverprototypepushlabel)
     - [Recover.prototype.pop](#recoverprototypepop)
     - [Recover.prototype.to](#recoverprototypetolabel)
@@ -83,7 +83,7 @@ Factory method for creating a new Recover instance.
 const recover = require('recover'),
     recoverer = recover();
 ```
-Takes the same options as the [constructor](#new-Recoveroptions).
+Takes the same options as the [constructor](#new-recoveroptions).
 
 ##### new Recover([options])
 Constructor for creating a new Recover instance.

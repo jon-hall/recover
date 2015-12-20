@@ -5,8 +5,8 @@
   "main": "src/recover.js",
   "bin": "bin/recover",
   "scripts": {
-    "test": "SET JASMINE_CONFIG_PATH=./test/jasmine.json&& jasmine",
-    "dev": "SET JASMINE_CONFIG_PATH=./test/jasmine.json&& nodemon --exec jasmine"
+    "test": "test_setup && jasmine",
+    "dev": "test_setup && nodemon --exec jasmine"
   },
   "repository": {
     "type": "git",
