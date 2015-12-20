@@ -38,6 +38,8 @@ function Recoverer(cfg) {
     this.labels = [];
     this.get_tags = this.git.exec('tag').then(tags => {
         this.labels = tags.split('\n');
+        // Remove the empty line
+        this.labels.pop();
     },
     // Make sure we default to empty array if 'git tag' fails
     _ => Promise.resolve([]));
@@ -58,13 +60,14 @@ Recoverer.prototype.push = co.wrap(function*(label) {
         throw 'Label must be a string';
     }
 
+    yield this.get_tags;
+
     if(label && (this.labels.indexOf(label) >= 0)) {
         throw 'Label already in use';
     }
 
     let status;
     try {
-        yield this.get_tags;
         // Stage all changes (additions, deletions, and updates)
         yield this.git.exec('add -A');
         status = yield this.git.exec('status --porcelain');
@@ -116,6 +119,8 @@ Recoverer.prototype.push = co.wrap(function*(label) {
         yield this.git.exec('branch -D temp');
 
         // We can no longer go back to the future... =(
+        console.log('pushflush', this.future);
+        yield* this._flush_tags(this.future);
         this.future = [];
     }
 
@@ -125,11 +130,17 @@ Recoverer.prototype.push = co.wrap(function*(label) {
 });
 
 Recoverer.prototype.pop = co.wrap(function*(label) {
+    yield this.get_tags;
+
     if(this.labels.length) {
         if(!(yield* this._on_master())) {
-            // If we're off master we have to checkout master at the
-            // current label, delete temp, and THEN reset master
-            yield this.git.exec('checkout master');
+            try {
+                // If we're off master we have to checkout master at the
+                // current label, delete temp, and THEN reset master
+                yield this.git.exec('checkout master');
+            } catch(ex) {
+                // TODO: Why does this return non-zero when it suceeds...
+            }
 
             // The current tag/label is always the last item in 'this.labels'
             yield this.git.exec(`checkout "tags/${this.labels[this.labels.length-1]}"`);
@@ -137,7 +148,9 @@ Recoverer.prototype.pop = co.wrap(function*(label) {
             // Delete temp
             yield this.git.exec('branch -D temp');
 
-            // No going back now
+            // No going back now, dump all future tags
+            console.log('popflush', this.future);
+            yield* this._flush_tags(this.future);
             this.future = [];
         }
 
@@ -151,14 +164,20 @@ Recoverer.prototype.pop = co.wrap(function*(label) {
 
         yield this.git.exec('reset --hard HEAD~1');
         yield this.reset(true);
-        return this.labels.pop();
+
+        console.log(this.labels);
+        let popped = this.labels.pop();
+        console.log('flushpop', popped);
+        yield* this._flush_tags([popped]);
+
+        return popped;
     }
 });
 
 Recoverer.prototype.reset = co.wrap(function*(_force) {
-    try {
-        yield this.get_tags;
+    yield this.get_tags;
 
+    try {
         // Only do a reset if we're not 'off-master', (e.g. in a 'to')
         if(_force || (yield* this._on_master())) {
             yield this.git.exec('reset --hard');
@@ -197,9 +216,13 @@ Recoverer.prototype.to = co.wrap(function*(label) {
             if(!(yield* this._on_master())) {
                 // Switch back ot master momentarily
                 yield this.git.exec('checkout master');
+            }
 
-                // Delete temp
+            try {
+                // Try to delete temp
                 yield this.git.exec('branch -D temp');
+            } catch(ex) {
+                // 'temp' didn't exist, no big deal
             }
 
             yield this.git.exec(`checkout "tags/${label}" -b temp`);
@@ -222,6 +245,13 @@ Recoverer.prototype.to = co.wrap(function*(label) {
 Recoverer.prototype._on_master = function*() {
     let branch = yield this.git.exec('rev-parse --abbrev-ref HEAD');
     return /^master/.test(branch);
+};
+
+Recoverer.prototype._flush_tags = function*(tags) {
+    for(let tag of tags) {
+        console.log('flushing tag "%s"', tag);
+        yield this.git.exec(`tag -d "${tag}"`);
+    }
 };
 
 module.exports = exports = function(cfg) {

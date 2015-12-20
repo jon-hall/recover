@@ -5,6 +5,10 @@ An ultra-simple folder versioning API built on git.
 npm install recover
 ```
 
+- [Example](#example)
+- [API](#api)
+- [CLI](#cli)
+
 ### Example
 ```js
 const recover = require('recover'),
@@ -162,4 +166,28 @@ recoverer.reset()
         _ => console.log('reset!'),
         err => console.error(err)
     );
+```
+
+### CLI
+```sh
+npm install recover -g
+```
+
+All of the [API](#api) methods are supported over command-line too.
+
+```sh
+recover push "my label"
+recover push "my label2"
+
+recover to "my label"
+# shorthand for 'recover to "my label2"'
+recover "my label2"
+
+recover pop
+
+recover reset
+
+# Specify the target and git directories
+recover push "my label3" --target "../some/other/dir"
+recover push "my label4" --gitdir "../the/git/dir"
 ```

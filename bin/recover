@@ -7,22 +7,32 @@ const argv = require('commander')
     .option('-t, --target [path]', 'Specify the folder to use recover on')
     .option('-g, --gitdir [path]', 'Specify the path for the git directory recover will use')
     .parse(process.argv),
-    recover = require('../src/recover')(argv);
+    recover = require('../src/recover')(argv),
+    args = argv.args;
 
-switch(argv[2]) {
+let cmd,
+    op = args[0];
+
+switch(op) {
     case 'to':
-        recover.to(argv[3]);
+        cmd = recover.to(args[1]);
         break;
     case 'push':
-        recover.push(argv[3]);
+        cmd = recover.push(args[1]);
         break;
     case 'pop':
-        recover.pop();
+        cmd = recover.pop();
         break;
     case 'reset':
-        recover.reset();
+        cmd = recover.reset();
         break;
     default:
-        recover.to(argv[2]);
+        op = 'to';
+        cmd = recover.to(args[0]);
         break;
 }
+
+cmd.then(
+    _ => console.log('"%s" command executed successfully', op),
+    err => console.error(err)
+);
