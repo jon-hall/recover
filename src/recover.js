@@ -6,6 +6,7 @@ const path = require('path'),
     co = require('co'),
     ospath = require('ospath'),
     del = require('del'),
+    debug = require('debug')('recover'),
     Git = require('./git');
 
 let n = 0;
@@ -108,6 +109,7 @@ Recoverer.prototype.push = co.wrap(function*(label) {
             yield this.git.exec(`checkout master`);
         } catch(ex) {
             // TODO: Why does this return non-zero when it suceeds...
+            debug('push:checkout master failed', ex);
         }
 
         // The current tag/label is always the last item in 'this.labels'
@@ -119,7 +121,7 @@ Recoverer.prototype.push = co.wrap(function*(label) {
         yield this.git.exec('branch -D temp');
 
         // We can no longer go back to the future... =(
-        console.log('pushflush', this.future);
+        debug('pushflush', this.future);
         yield* this._flush_tags(this.future);
         this.future = [];
     }
@@ -140,6 +142,7 @@ Recoverer.prototype.pop = co.wrap(function*(label) {
                 yield this.git.exec('checkout master');
             } catch(ex) {
                 // TODO: Why does this return non-zero when it suceeds...
+                debug('pop:checkout master failed', ex);
             }
 
             // The current tag/label is always the last item in 'this.labels'
@@ -149,7 +152,7 @@ Recoverer.prototype.pop = co.wrap(function*(label) {
             yield this.git.exec('branch -D temp');
 
             // No going back now, dump all future tags
-            console.log('popflush', this.future);
+            debug('popflush', this.future);
             yield* this._flush_tags(this.future);
             this.future = [];
         }
@@ -165,9 +168,9 @@ Recoverer.prototype.pop = co.wrap(function*(label) {
         yield this.git.exec('reset --hard HEAD~1');
         yield this.reset(true);
 
-        console.log(this.labels);
+        debug(this.labels);
         let popped = this.labels.pop();
-        console.log('flushpop', popped);
+        debug('flushpop', popped);
         yield* this._flush_tags([popped]);
 
         return popped;
@@ -188,6 +191,7 @@ Recoverer.prototype.reset = co.wrap(function*(_force) {
         yield this.git.exec('checkout .');
     } catch(ex) {
         // TODO: Real error handling...
+        debug('reset:failed', ex);
     }
 });
 
@@ -201,34 +205,42 @@ Recoverer.prototype.to = co.wrap(function*(label) {
     let past_index = this.labels.indexOf(label),
         future_index =  this.future.indexOf(label);
 
-    if((past_index >= 0) || (future_index >= 0)) {
-        // Clean our working copy
-        yield this.reset();
+    if((past_index < 0) && (future_index < 0)) {
+        throw 'Unrecognised label';
+    }
 
-        // Bail here if 'to' is called for the current version
-        if(past_index === (this.labels.length - 1)) {
-            return;
+    // Clean our working copy
+    yield this.reset();
+
+    // Bail here if 'to' is called for the current version
+    if(past_index === (this.labels.length - 1)) {
+        return;
+    }
+
+    // Checkout the tag we're moving to
+    try {
+        // If we're off master we need to delete temp so we can re-create
+        if(!(yield* this._on_master())) {
+            // Switch back ot master momentarily
+            yield this.git.exec('checkout master');
         }
+    } catch(ex) {
+        // TODO: Why does this have a non-zero exit code when it suceeds?
+        debug('to:master checkout failed', ex);
+    }
 
-        // Checkout the tag we're moving to
-        try {
-            // If we're off master we need to delete temp so we can re-create
-            if(!(yield* this._on_master())) {
-                // Switch back ot master momentarily
-                yield this.git.exec('checkout master');
-            }
+    try {
+        // Try to delete temp
+        yield this.git.exec('branch -D temp');
+    } catch(ex) {
+        // 'temp' didn't exist, which leaves us on a new 'temp' branch
+        debug('to:deleting temp failed', ex);
+    }
 
-            try {
-                // Try to delete temp
-                yield this.git.exec('branch -D temp');
-            } catch(ex) {
-                // 'temp' didn't exist, no big deal
-            }
-
-            yield this.git.exec(`checkout "tags/${label}" -b temp`);
-        } catch(ex) {
-            // TODO: Why does this have a non-zero exit code when it suceeds?
-        }
+    try {
+        yield this.git.exec(`checkout "tags/${label}" -b temp`);
+    } catch(ex) {
+        debug('to:master checkout failed', ex);
     }
 
     if(past_index >= 0) {
@@ -237,8 +249,6 @@ Recoverer.prototype.to = co.wrap(function*(label) {
     } else if (future_index >= 0) {
         // Move any items now in the past out of 'this.future', back into labels
         this.labels = this.labels.concat(this.future.splice(future_index, future_index + 1));
-    } else {
-        throw 'Unrecognised label';
     }
 });
 
@@ -249,8 +259,8 @@ Recoverer.prototype._on_master = function*() {
 
 Recoverer.prototype._flush_tags = function*(tags) {
     for(let tag of tags) {
-        console.log('flushing tag "%s"', tag);
         yield this.git.exec(`tag -d "${tag}"`);
+        debug('flushing tag "%s"', tag);
     }
 };
 
