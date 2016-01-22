@@ -5,6 +5,7 @@ const path = require('path'),
     fsx = require('fs-extra'),
     co = require('co'),
     ospath = require('ospath'),
+    tryto = require('try-to'),
     del = require('del'),
     debug = require('debug')('recover'),
     Git = require('./git');
@@ -259,8 +260,12 @@ Recoverer.prototype._on_master = function*() {
 
 Recoverer.prototype._flush_tags = function*(tags) {
     for(let tag of tags) {
-        yield this.git.exec(`tag -d "${tag}"`);
         debug('flushing tag "%s"', tag);
+
+        // Use try-to to retry the (particularly flaky) tag removal upto 10 times
+        yield tryto(() => this.git.exec(`tag -d "${tag}"`))
+            .for(10)
+            .now();
     }
 };
 

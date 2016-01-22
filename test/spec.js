@@ -37,6 +37,9 @@ describe('recover', function() {
     beforeEach(function(done) {
         let _this = this;
 
+        // These are full integration tests, so give them plenty of time
+        jasmine.DEFAULT_TIMEOUT_INTERVAL = 30000;
+
         temp.mkdir('recover_test', function(err, target) {
             if(err) {
                 throw err;
