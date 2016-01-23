@@ -147,7 +147,12 @@ Recoverer.prototype.pop = co.wrap(function*(label) {
             }
 
             // The current tag/label is always the last item in 'this.labels'
-            yield this.git.exec(`checkout "tags/${this.labels[this.labels.length-1]}"`);
+                try {
+                    yield this.git.exec(`checkout "tags/${this.labels[this.labels.length-1]}"`);
+                } catch(ex) {
+                    // TODO: Why does this return non-zero when it suceeds...
+                    debug('pop:checkout latest tag failed', ex);
+                }
 
             // Delete temp
             yield this.git.exec('branch -D temp');
