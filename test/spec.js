@@ -317,71 +317,47 @@ describe('recover', function() {
             var i = 0;
             this.fail = function() {
                 var n = i;
-                return function() { 
-                    expect('fail' + n).toBe('not hit'); 
+                return function() {
+                    expect('fail' + n).toBe('not hit');
                 };
             }
         });
-        
+
         fit('should be fixed', function(done) {
             let i = 0;
 
             this.files.write('a.txt', 'a')
                 .then(() => this.rec.push('a'))
-
                 .then(() => this.files.read('a.txt'))
                 .then(c => expect(c + i).toBe('a' + i++))
 
                 .then(() => this.files.write('a.txt', 'b'))
-                .then(() => this.files.write('b.txt', 'b'))
                 .then(() => this.rec.push('b'))
-
                 .then(() => this.files.read('a.txt'))
-                .then(c => expect(c + i).toBe('b' + i++))
-                .then(() => this.files.read('b.txt'))
                 .then(c => expect(c + i).toBe('b' + i++))
 
                 .then(() => this.files.write('a.txt', 'c'))
-                .then(() => this.files.write('b.txt', 'c'))
                 .then(() => this.rec.push('c'))
-
                 .then(() => this.files.read('a.txt'))
-                .then(c => expect(c + i).toBe('c' + i++))
-                .then(() => this.files.read('b.txt'))
                 .then(c => expect(c + i).toBe('c' + i++))
 
                 .then(() => this.rec.to('a'))
-
                 .then(() => this.files.read('a.txt'))
                 .then(c => expect(c + i).toBe('a' + i++))
-                .then(() => this.files.read('b.txt'))
-                .then(() => this.fail(), () => true) // swallow rejection
 
                 .then(() => this.rec.to('c'))
-
                 .then(() => this.files.read('a.txt'))
-                .then(c => expect(c + i).toBe('c' + i++))
-                .then(() => this.files.read('b.txt'))
                 .then(c => expect(c + i).toBe('c' + i++))
 
                 // after a few 'to's' and a 'pop'...
                 .then(() => this.rec.pop())
-
                 .then(() => this.files.read('a.txt'))
                 .then(c => expect(c + i).toBe('b' + i++))
-                .then(() => this.files.read('b.txt'))
-                .then(c => expect(c + i).toBe('b' + i++))
-                
-                .then(() => this.rec.to('c'))
-                .then(() => this.fail(), () => true) // swallow rejection
-                
-                .then(() => this.rec.to('a'))
 
                 // ...the 'to a' no longer works as expected
+                .then(() => this.rec.to('a'))
                 .then(() => this.files.read('a.txt'))
                 .then(c => expect(c + i).toBe('a' + i++))
-                .then(() => this.files.read('b.txt'))
-                .then(() => this.fail())
 
                 .then(done, done.fail);
         });

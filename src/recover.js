@@ -110,7 +110,7 @@ Recoverer.prototype.push = co.wrap(function*(label) {
             yield this.git.exec(`checkout master`);
         } catch(ex) {
             // TODO: Why does this return non-zero when it suceeds...
-            debug('push:checkout master failed', ex);
+            //debug('push:checkout master failed', ex);
         }
 
         // The current tag/label is always the last item in 'this.labels'
@@ -143,16 +143,16 @@ Recoverer.prototype.pop = co.wrap(function*(label) {
                 yield this.git.exec('checkout master');
             } catch(ex) {
                 // TODO: Why does this return non-zero when it suceeds...
-                debug('pop:checkout master failed', ex);
+                //debug('pop:checkout master failed', ex);
             }
 
             // The current tag/label is always the last item in 'this.labels'
-                try {
-                    yield this.git.exec(`checkout "tags/${this.labels[this.labels.length-1]}"`);
-                } catch(ex) {
-                    // TODO: Why does this return non-zero when it suceeds...
-                    debug('pop:checkout latest tag failed', ex);
-                }
+            try {
+                yield this.git.exec(`checkout "tags/${this.labels[this.labels.length-1]}"`);
+            } catch(ex) {
+                // TODO: Why does this return non-zero when it suceeds...
+                //debug('pop:checkout latest tag failed', ex);
+            }
 
             // Delete temp
             yield this.git.exec('branch -D temp');
@@ -172,7 +172,7 @@ Recoverer.prototype.pop = co.wrap(function*(label) {
         }
 
         yield this.git.exec('reset --hard HEAD~1');
-        yield this.reset(true);
+        //yield this.reset(true);
 
         debug(this.labels);
         let popped = this.labels.pop();
@@ -197,7 +197,7 @@ Recoverer.prototype.reset = co.wrap(function*(_force) {
         yield this.git.exec('checkout .');
     } catch(ex) {
         // TODO: Real error handling...
-        debug('reset:failed', ex);
+        //debug('reset:failed', ex);
     }
 });
 
@@ -208,11 +208,13 @@ Recoverer.prototype.to = co.wrap(function*(label) {
 
     yield this.get_tags;
 
+    debug('to', label, this.labels, this.future);
+
     let past_index = this.labels.indexOf(label),
         future_index =  this.future.indexOf(label);
 
     if((past_index < 0) && (future_index < 0)) {
-        throw 'Unrecognised label';
+        throw 'Unrecognised label: ' + label;
     }
 
     // Clean our working copy
@@ -220,6 +222,7 @@ Recoverer.prototype.to = co.wrap(function*(label) {
 
     // Bail here if 'to' is called for the current version
     if(past_index === (this.labels.length - 1)) {
+        debug('to: called for current');
         return;
     }
 
@@ -232,7 +235,7 @@ Recoverer.prototype.to = co.wrap(function*(label) {
         }
     } catch(ex) {
         // TODO: Why does this have a non-zero exit code when it suceeds?
-        debug('to:master checkout failed', ex);
+        //debug('to:master checkout failed', ex);
     }
 
     try {
@@ -240,13 +243,13 @@ Recoverer.prototype.to = co.wrap(function*(label) {
         yield this.git.exec('branch -D temp');
     } catch(ex) {
         // 'temp' didn't exist, which leaves us on a new 'temp' branch
-        debug('to:deleting temp failed', ex);
+        //debug('to:deleting temp failed', ex);
     }
 
     try {
         yield this.git.exec(`checkout "tags/${label}" -b temp`);
     } catch(ex) {
-        debug('to:master checkout failed', ex);
+        //debug('to:master checkout failed', ex);
     }
 
     if(past_index >= 0) {
@@ -254,8 +257,10 @@ Recoverer.prototype.to = co.wrap(function*(label) {
         this.future = this.labels.splice(past_index + 1).concat(this.future);
     } else if (future_index >= 0) {
         // Move any items now in the past out of 'this.future', back into labels
-        this.labels = this.labels.concat(this.future.splice(future_index, future_index + 1));
+        this.labels = this.labels.concat(this.future.splice(0, future_index + 1));
     }
+
+    debug('end to', label, this.labels, this.future);
 });
 
 Recoverer.prototype._on_master = function*() {
