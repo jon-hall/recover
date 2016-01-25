@@ -172,7 +172,8 @@ Recoverer.prototype.pop = co.wrap(function*(label) {
         }
 
         yield this.git.exec('reset --hard HEAD~1');
-        //yield this.reset(true);
+        // Make sure we also clean any untracked files (wrt the target version)
+        yield this.reset(true);
 
         debug(this.labels);
         let popped = this.labels.pop();

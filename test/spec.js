@@ -197,7 +197,7 @@ describe('recover', function() {
         describe('and a string is passed in', function() {
             describe('and the string is not a valid recover label', function() {
                 it('it errors', function(done) {
-                    expect(this.rec.to('notavalidlabel')).toBeRejectedWith('Unrecognised label', done);
+                    expect(this.rec.to('notavalidlabel')).toBeRejectedWith('Unrecognised label: notavalidlabel', done);
                 });
             });
 
@@ -249,7 +249,7 @@ describe('recover', function() {
 
                         describe('and then we try to go to a recover point which has been destroyed', function() {
                             it('it errors', function(done) {
-                                expect(this.rec.to('c')).toBeRejectedWith('Unrecognised label', done);
+                                expect(this.rec.to('c')).toBeRejectedWith('Unrecognised label: c', done);
                             });
                         });
                     });
@@ -323,7 +323,7 @@ describe('recover', function() {
             }
         });
 
-        fit('should be fixed', function(done) {
+        it('should be fixed', function(done) {
             let i = 0;
 
             this.files.write('a.txt', 'a')
