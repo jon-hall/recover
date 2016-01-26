@@ -117,6 +117,8 @@ Recoverer.prototype.push = co.wrap(function*(label) {
         yield this.git.exec(`reset --hard "tags/${this.labels[this.labels.length-1]}"`);
         yield this.reset(true);
 
+        // TODO: CLI might be showing a bug here, crashed after pushing a version with the same name just popped, after doing some to's
+        // a (push) -> b (push) -> c (push) -> a (to) -> c (to) -> b (pop) -> c (push) [crash]
         // Merge temp back in and delete it
         yield this.git.exec('merge temp');
         yield this.git.exec('branch -D temp');
@@ -262,6 +264,11 @@ Recoverer.prototype.to = co.wrap(function*(label) {
     }
 
     debug('end to', label, this.labels, this.future);
+});
+
+Recoverer.prototype.list = co.wrap(function*() {
+    yield this.get_tags;
+    return this.labels.concat(this.future);
 });
 
 Recoverer.prototype._on_master = function*() {

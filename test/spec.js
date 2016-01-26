@@ -258,6 +258,62 @@ describe('recover', function() {
         });
     });
 
+    describe('when list is called', function() {
+        describe('and there are no versions pushed', function() {
+            it('it returns an empty array', function(done) {
+                this.rec.list()
+                    .then(tags => expect(tags).toEqual([]))
+                    .then(done, done);
+            });
+        });
+
+        describe('and there are versions pushed', function() {
+            beforeEach(function(done) {
+                this.files.write('a.txt', 'some text')
+                    .then(() => this.rec.push('a'))
+                    .then(() => this.files.write('b.txt', 'more stuff'))
+                    .then(() => this.rec.push('b'))
+                    .then(() => this.files.write('c.txt', 'even more stuff'))
+                    .then(() => this.rec.push('c'))
+                    .then(done, done);
+            });
+
+            it('it returns array of the version tags', function(done) {
+                this.rec.list()
+                    .then(tags => expect(tags).toEqual(['a', 'b', 'c']))
+                    .then(done, done);
+            });
+
+            describe('and to has been called', function() {
+                beforeEach(function(done) {
+                    this.rec.to('b')
+                        .then(done, done);
+                });
+
+                describe('but pop hasn\'t been called', function() {
+                    it('then it returns an array of all tags', function(done) {
+                        this.rec.list()
+                            .then(tags => expect(tags).toEqual(['a', 'b', 'c']))
+                            .then(done, done);
+                    });
+                });
+
+                describe('and pop has been called', function() {
+                    beforeEach(function(done) {
+                        this.rec.pop()
+                            .then(done, done);
+                    });
+
+                    it('it returns a truncated array of tags', function(done) {
+                        this.rec.list()
+                            .then(tags => expect(tags).toEqual(['a']))
+                            .then(done, done);
+                    });
+                });
+            });
+        });
+    });
+
     describe('when reset is called', function() {
         beforeEach(function(done) {
             this.files.write('a.txt', 'some text')

@@ -67,6 +67,9 @@ recoverer.push('init')
         _ => console.log('not hit'),
         err => console.log('can\'t recover version "add b"')
     )
+    .then(_ => recoverer.list())
+    // returns the current set of versions - ['add a', 'add b']
+    .then(versions => console.log(versions.join()))
 
 ```
 
@@ -79,6 +82,7 @@ All of the methods (other than the constructor) return Promises, which resolve o
     - [Recover.prototype.pop](#recoverprototypepop)
     - [Recover.prototype.to](#recoverprototypetolabel)
     - [Recover.prototype.reset](#recoverprototypereset)
+    - [Recover.prototype.ls](#recoverprototypetolabel)
 
 ##### recover([options])
 Factory method for creating a new Recover instance.
@@ -168,6 +172,17 @@ recoverer.reset()
     );
 ```
 
+##### Recover.prototype.list()
+Returns an array of the current set of version tags which [Recover.prototype.to](#recoverprototypetolabel) can be called with.
+
+```js
+recoverer.list()
+    .then(
+        versions => console.log(Array.isArray(versions)), // true
+        err => console.error(err)
+    );
+```
+
 ### CLI
 ```sh
 npm install recover -g
@@ -178,6 +193,10 @@ All of the [API](#api) methods are supported over command-line too.
 ```sh
 recover push "my label"
 recover push "my label2"
+
+recover ls
+# my label
+# my label2
 
 recover to "my label"
 # shorthand for 'recover to "my label2"'
