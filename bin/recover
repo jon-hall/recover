@@ -10,32 +10,37 @@ const argv = require('commander')
     recover = require('../src/recover')(argv),
     args = argv.args;
 
-let cmd,
-    op = args[0];
+let op = args[0],
+    cmd;
 
 switch(op) {
     case 'to':
-        cmd = recover.to(args[1]);
+        cmd = recover.to(args[1])
+            .then(() => console.log(`now at ${args[1]}`));
         break;
     case 'push':
-        cmd = recover.push(args[1]);
+        cmd = recover.push(args[1])
+            .then(tag => console.log(tag ? `pushed ${tag}` : 'no changes'));
         break;
     case 'pop':
-        cmd = recover.pop();
+        cmd = recover.pop()
+            .then(() => console.log(`popped`));
         break;
     case 'reset':
-        cmd = recover.reset();
+        cmd = recover.reset()
+            .then(() => console.log(`reset`));
         break;
     case 'ls':
-        cmd = recover.list().then(tags => console.log(tags.join('\n') + '\n'));
+        cmd = recover.list()
+            .then(tags => console.log(`${tags.join('\n')}\n`));
         break;
     default:
-        op = 'to';
-        cmd = recover.to(args[0]);
+        cmd = recover.to(args[0])
+            .then(() => console.log(`now at ${args[0]}`));
         break;
 }
 
 cmd.then(
-    _ => console.log('"%s" command executed successfully', op),
+    null,
     err => console.error(err)
 );
