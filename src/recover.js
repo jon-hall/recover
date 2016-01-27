@@ -82,7 +82,7 @@ Recoverer.prototype.push = co.wrap(function*(label) {
         status = yield this.git.exec('status --porcelain');
     }
 
-    // Check if there were any results form status
+    // Check if there were any results from status
     if(!status.trim()) {
         // No text in status => no changes to commit
         return null;
@@ -91,7 +91,7 @@ Recoverer.prototype.push = co.wrap(function*(label) {
 
     // Use a counter to generate a unique commit label
     while(!label || (this.labels.indexOf(label) >= 0)) {
-        label = '' + n++;
+        label = 'v' + n++;
     }
 
     // Commit and tag with the label, so we can easily come back to it later
