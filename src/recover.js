@@ -119,6 +119,7 @@ Recoverer.prototype.push = co.wrap(function*(label) {
 
         // TODO: CLI might be showing a bug here, crashed after pushing a version with the same name just popped, after doing some to's
         // a (push) -> b (push) -> c (push) -> a (to) -> c (to) -> b (pop) -> c (push) [crash]
+        // - The initial bit that goes wrong is the 'to c' call, it stays at 'a' but claims it succeeds
         // Merge temp back in and delete it
         yield this.git.exec('merge temp');
         yield this.git.exec('branch -D temp');
