@@ -418,4 +418,52 @@ describe('recover', function() {
                 .then(done, done.fail);
         });
     });
+
+    describe('bug#2', function() {
+        beforeEach(function() {
+            var i = 0;
+            this.fail = function() {
+                var n = i;
+                return function() {
+                    expect('fail' + n).toBe('not hit');
+                };
+            }
+        });
+
+        it('should be fixed', function(done) {
+            let i = 0;
+
+            this.files.write('a.txt', 'a')
+                .then(() => this.rec.push('a'))
+                .then(() => this.files.read('a.txt'))
+                .then(c => expect(c + i).toBe('a' + i++))
+
+                .then(() => this.files.write('a.txt', 'b'))
+                .then(() => this.rec.push('b'))
+                .then(() => this.files.read('a.txt'))
+                .then(c => expect(c + i).toBe('b' + i++))
+
+                .then(() => this.files.write('a.txt', 'c'))
+                .then(() => this.rec.push('c'))
+                .then(() => this.files.read('a.txt'))
+                .then(c => expect(c + i).toBe('c' + i++))
+
+                .then(() => this.rec.to('a'))
+                .then(() => this.files.read('c.txt'))
+                .then(done.fail, () => this.files.read('b.txt'))
+                .then(done.fail, () => this.files.read('a.txt'))
+                .then(c => expect(c + i).toBe('a' + i++))
+
+                .then(() => this.rec.to('c'))
+                .then(() => this.files.read('a.txt'))
+                .then(c => expect(c + i).toBe('a' + i++))
+                // Fails here
+                .then(() => this.files.read('b.txt'))
+                .then(c => expect(c + i).toBe('b' + i++))
+                .then(() => this.files.read('c.txt'))
+                .then(c => expect(c + i).toBe('c' + i++))
+
+                .then(done, done.fail);
+        });
+    });
 });
