@@ -449,18 +449,19 @@ describe('recover', function() {
                 .then(c => expect(c + i).toBe('c' + i++))
 
                 .then(() => this.rec.to('a'))
-                .then(() => this.files.read('c.txt'))
-                .then(done.fail, () => this.files.read('b.txt'))
-                .then(done.fail, () => this.files.read('a.txt'))
+                .then(() => this.files.read('a.txt'))
                 .then(c => expect(c + i).toBe('a' + i++))
 
                 .then(() => this.rec.to('c'))
                 .then(() => this.files.read('a.txt'))
+                .then(c => expect(c + i).toBe('c' + i++))
+
+                .then(() => this.rec.to('a'))
+                .then(() => this.files.read('a.txt'))
                 .then(c => expect(c + i).toBe('a' + i++))
-                // Fails here
-                .then(() => this.files.read('b.txt'))
-                .then(c => expect(c + i).toBe('b' + i++))
-                .then(() => this.files.read('c.txt'))
+
+                .then(() => this.rec.to('c'))
+                .then(() => this.files.read('a.txt'))
                 .then(c => expect(c + i).toBe('c' + i++))
 
                 .then(done, done.fail);

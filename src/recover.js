@@ -230,30 +230,11 @@ Recoverer.prototype.to = co.wrap(function*(label) {
         return;
     }
 
-    // Checkout the tag we're moving to
+    // Checkout the tag we're moving to on 'temp' branch (creating branch if needed)
     try {
-        // If we're off master we need to delete temp so we can re-create
-        if(!(yield* this._on_master())) {
-            // Switch back ot master momentarily
-            yield this.git.exec('checkout master');
-        }
+        yield this.git.exec(`checkout "tags/${label}" -B temp`);
     } catch(ex) {
-        // TODO: Why does this have a non-zero exit code when it suceeds?
-        //debug('to:master checkout failed', ex);
-    }
-
-    try {
-        // Try to delete temp
-        yield this.git.exec('branch -D temp');
-    } catch(ex) {
-        // 'temp' didn't exist, which leaves us on a new 'temp' branch
-        //debug('to:deleting temp failed', ex);
-    }
-
-    try {
-        yield this.git.exec(`checkout "tags/${label}" -b temp`);
-    } catch(ex) {
-        //debug('to:master checkout failed', ex);
+        //debug('to:tag checkout failed', ex);
     }
 
     if(past_index >= 0) {
