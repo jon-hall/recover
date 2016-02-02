@@ -82,7 +82,7 @@ All of the methods (other than the constructor) return Promises, which resolve o
     - [Recover.prototype.pop](#recoverprototypepop)
     - [Recover.prototype.to](#recoverprototypetolabel)
     - [Recover.prototype.reset](#recoverprototypereset)
-    - [Recover.prototype.ls](#recoverprototypetolabel)
+    - [Recover.prototype.list](#recoverprototypelist)
 
 ##### recover([options])
 Factory method for creating a new Recover instance.
