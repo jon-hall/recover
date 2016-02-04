@@ -110,7 +110,7 @@ Recoverer.prototype.push = co.wrap(function*(label) {
             yield this.git.exec(`checkout master`);
         } catch(ex) {
             // TODO: Why does this return non-zero when it suceeds...
-            //debug('push:checkout master failed', ex);
+            debug('push:checkout master failed', ex.message);
         }
 
         // The current tag/label is always the last item in 'this.labels'
@@ -146,7 +146,7 @@ Recoverer.prototype.pop = co.wrap(function*(label) {
                 yield this.git.exec('checkout master');
             } catch(ex) {
                 // TODO: Why does this return non-zero when it suceeds...
-                //debug('pop:checkout master failed', ex);
+                debug('pop:checkout master failed', ex.message);
             }
 
             // The current tag/label is always the last item in 'this.labels'
@@ -154,7 +154,7 @@ Recoverer.prototype.pop = co.wrap(function*(label) {
                 yield this.git.exec(`checkout "tags/${this.labels[this.labels.length-1]}"`);
             } catch(ex) {
                 // TODO: Why does this return non-zero when it suceeds...
-                //debug('pop:checkout latest tag failed', ex);
+                debug('pop:checkout latest tag failed', ex.message);
             }
 
             // Delete temp
@@ -201,7 +201,7 @@ Recoverer.prototype.reset = co.wrap(function*(_force) {
         yield this.git.exec('checkout .');
     } catch(ex) {
         // TODO: Real error handling...
-        //debug('reset:failed', ex);
+        debug('reset:failed', ex.message);
     }
 });
 
@@ -234,7 +234,7 @@ Recoverer.prototype.to = co.wrap(function*(label) {
     try {
         yield this.git.exec(`checkout "tags/${label}" -B temp`);
     } catch(ex) {
-        //debug('to:tag checkout failed', ex);
+        debug('to:tag checkout failed', ex.message);
     }
 
     if(past_index >= 0) {
