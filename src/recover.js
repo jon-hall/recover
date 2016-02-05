@@ -22,7 +22,7 @@ function Recoverer(cfg) {
     try {
         fsx.lstatSync(this.cfg.target);
     } catch(ex) {
-        throw new Error('Gitdir specified already exists.');
+        throw new Error('Target directory not found.');
     }
 
     // Make sure the gitdir does exist
@@ -87,7 +87,6 @@ Recoverer.prototype.push = co.wrap(function*(label) {
         // No text in status => no changes to commit
         return null;
     }
-
 
     // Use a counter to generate a unique commit label
     while(!label || (this.labels.indexOf(label) >= 0)) {
