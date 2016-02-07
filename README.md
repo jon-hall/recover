@@ -1,5 +1,5 @@
 ## recover
-An ultra-simple folder versioning API built on git.
+(WIP) An ultra-simple folder versioning API built on git.
 
 ```sh
 npm install recover
