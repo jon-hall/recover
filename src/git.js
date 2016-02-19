@@ -9,7 +9,7 @@ function Git(options) {
 }
 
 /**
- * A simple promise-returning wrapper around exec(' git ...') which executes in a predefined
+ * A simple promise-returning wrapper around exec('git ...') which executes in a predefined
  * directory, and with a predefined $GIT_DIR if specified.
  * @param  {String} cmd The git command to run (minus the 'git ' part).
  * @return {Promise}    Resolves with stdout or rejects with err/stderr.
