@@ -44,7 +44,7 @@ function Recoverer(cfg) {
         this.labels.pop();
     },
     // Make sure we default to empty array if 'git tag' fails
-    _ => Promise.resolve([]));
+    () => Promise.resolve([]));
 }
 
 function get_folder_name(folder) {
